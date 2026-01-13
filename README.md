@@ -2,7 +2,7 @@
 
 A comprehensive Flutter-based expense tracking application that helps you manage your finances with intelligent features like SMS expense extraction, budget management, and detailed analytics.
 
-## 🚀 Features
+##  Features
 
 ### Core Functionality
 - **Expense Tracking**: Manually add and categorize expenses
@@ -27,7 +27,7 @@ A comprehensive Flutter-based expense tracking application that helps you manage
 - **Duplicate Prevention**: Prevents duplicate expense entries
 
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Framework**: Flutter 3.8.1+
 - **State Management**: Provider
@@ -43,7 +43,7 @@ A comprehensive Flutter-based expense tracking application that helps you manage
 - **UI Components**: Introduction Screen, Grouped List
 - **Utilities**: UUID, Intl
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Flutter SDK 3.8.1 or higher
 - Dart SDK
@@ -51,7 +51,7 @@ A comprehensive Flutter-based expense tracking application that helps you manage
 - Firebase project setup
 - Google Services configuration
 
-## 🔧 Installation & Setup
+##  Installation & Setup
 
 ### 1. Clone the Repository
 ```bash
@@ -79,7 +79,7 @@ flutter packages pub run build_runner build
 flutter run
 ```
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 expenzo/
@@ -112,14 +112,14 @@ expenzo/
 └── pubspec.yaml
 ```
 
-## 🔐 Permissions Required
+##  Permissions Required
 
 - **SMS Access**: For automatic expense extraction from bank messages
 - **Storage**: For saving app data and images
 - **Notifications**: For budget alerts and reminders
 - **Camera/Gallery**: For profile picture upload
 
-## 🚀 Key Features Explained
+##  Key Features Explained
 
 ### SMS Expense Extraction
 The app automatically scans incoming SMS messages from banks and financial institutions, extracts transaction amounts, and creates expense entries. It supports:
@@ -140,7 +140,7 @@ The app automatically scans incoming SMS messages from banks and financial insti
 - Monthly/yearly comparisons
 - Interactive charts and graphs
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
@@ -148,18 +148,14 @@ The app automatically scans incoming SMS messages from banks and financial insti
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
+##  Support
 
 If you encounter any issues or have questions:
 1. Check the [Issues](https://github.com/Animesh-86/Expenzo/issues) page
 2. Create a new issue with detailed information
 3. Contact the development team
 
-## 🔄 Version History
+##  Version History
 
 - **v1.0.0**: Initial release with core expense tracking features
 - SMS auto-extraction
