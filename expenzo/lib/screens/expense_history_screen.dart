@@ -22,525 +22,41 @@ import '../providers/recurring_expenses_provider.dart';
 // Screens
 import 'expense_entry_screen.dart';
 import 'analytics_screen.dart';
-// import 'recurring_expenses_screen.dart';
+import 'goals_screen.dart';
 import 'profile_screen.dart';
 
-class _Goal {
-  String name;
-  double target;
-  String categoryId;
-  DateTime? deadline;
-  _Goal({
-    required this.name,
-    required this.target,
-    required this.categoryId,
-    this.deadline,
-  });
-}
-
-class GoalsScreen extends StatefulWidget {
-  const GoalsScreen({super.key});
-
-  @override
-  State<GoalsScreen> createState() => _GoalsScreenState();
-}
-
-class _GoalsScreenState extends State<GoalsScreen> {
-  final List<_Goal> _goals = [];
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _amountController = TextEditingController();
-  String? _selectedCategoryId;
-  final Set<_Goal> _notifiedGoals = {};
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkLastMonthGoals());
-  }
-
-  Future<void> _checkLastMonthGoals() async {
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    final lastMonth = DateTime(now.year, now.month - 1, 1);
-    final lastMonthKey =
-        '${lastMonth.year}-${lastMonth.month.toString().padLeft(2, '0')}';
-    final shown = prefs.getStringList('goal_congrats_$lastMonthKey') ?? [];
-    final expenses = Provider.of<ExpensesProvider>(
-      context,
-      listen: false,
-    ).expenses;
-    for (final goal in _goals) {
-      final spent = expenses
-          .where(
-            (e) =>
-                e.category == goal.categoryId &&
-                e.date.year == lastMonth.year &&
-                e.date.month == lastMonth.month,
-          )
-          .fold<double>(0, (sum, e) => sum + e.amount);
-      if (spent <= goal.target && !shown.contains(goal.name)) {
-        // Show congrats dialog and notification
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Goal Achieved!'),
-            content: Text(
-              'Congratulations! You stayed under your goal for "${goal.name}" last month.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-        showBudgetNotification(
-          'Goal Achieved!',
-          'Congratulations! You stayed under your goal for "${goal.name}" last month.',
-        );
-        shown.add(goal.name);
-        await prefs.setStringList('goal_congrats_$lastMonthKey', shown);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _amountController.dispose();
-    super.dispose();
-  }
-
-  void _addGoal() {
-    if (_formKey.currentState!.validate() && _selectedCategoryId != null) {
-      setState(() {
-        _goals.add(
-          _Goal(
-            name: _nameController.text.trim(),
-            target: double.parse(_amountController.text),
-            categoryId: _selectedCategoryId!,
-          ),
-        );
-        _nameController.clear();
-        _amountController.clear();
-        _selectedCategoryId = null;
-      });
-      FocusScope.of(context).unfocus();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final categories = Provider.of<CategoriesProvider>(context).categories;
-    final expenses = Provider.of<ExpensesProvider>(context).expenses;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Goals')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: TextFormField(
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Goal Name',
-                            hintText: 'e.g. Vacation',
-                          ),
-                          validator: (val) => val == null || val.trim().isEmpty
-                              ? 'Enter a name'
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 1,
-                        child: TextFormField(
-                          controller: _amountController,
-                          decoration: const InputDecoration(
-                            labelText: 'Target (₹)',
-                            hintText: '10000',
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty)
-                              return 'Enter amount';
-                            final n = double.tryParse(val);
-                            if (n == null || n <= 0)
-                              return 'Enter valid amount';
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: _addGoal,
-                        child: const Text('Add'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: _selectedCategoryId,
-                    decoration: const InputDecoration(labelText: 'Category'),
-                    items: categories
-                        .map(
-                          (cat) => DropdownMenuItem(
-                            value: cat.id,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  IconData(
-                                    cat.icon,
-                                    fontFamily: 'MaterialIcons',
-                                  ),
-                                  color: Color(cat.color),
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(cat.name),
-                              ],
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (val) =>
-                        setState(() => _selectedCategoryId = val),
-                    validator: (val) => val == null ? 'Select category' : null,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: _goals.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No goals yet. Add your first goal!',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                    )
-                  : ListView.separated(
-                      itemCount: _goals.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final goal = _goals[index];
-                        final uncategorized = Category(
-                          id: 'uncat',
-                          name: 'Uncategorized',
-                          icon: Icons.category.codePoint,
-                          isCustom: false,
-                          color: 0xFF9E9E9E,
-                        );
-                        final cat = categories.firstWhere(
-                          (c) => c.id == goal.categoryId,
-                          orElse: () => uncategorized,
-                        );
-                        final spent = expenses
-                            .where((e) => e.category == goal.categoryId)
-                            .fold<double>(0, (sum, e) => sum + e.amount);
-                        final progressRaw = spent / goal.target;
-                        final progress = progressRaw.clamp(0.0, 1.0);
-                        if (progressRaw >= 1.0 &&
-                            !_notifiedGoals.contains(goal)) {
-                          _notifiedGoals.add(goal);
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Goal Completed!'),
-                                content: Text(
-                                  'Congratulations! You have completed your goal: "${goal.name}"',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    child: const Text('OK'),
-                                  ),
-                                ],
-                              ),
-                            );
-                            // Optionally, show a local notification
-                            showBudgetNotification(
-                              'Goal Completed!',
-                              'Congratulations! You have completed your goal: "${goal.name}"',
-                            );
-                          });
-                        }
-                        return Card(
-                          color: Colors.black.withOpacity(0.4),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        if (cat != null)
-                                          Icon(
-                                            IconData(
-                                              cat.icon,
-                                              fontFamily: 'MaterialIcons',
-                                            ),
-                                            color: Color(cat.color),
-                                            size: 18,
-                                          ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          goal.name,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.edit,
-                                            color: Colors.amber,
-                                            size: 20,
-                                          ),
-                                          tooltip: 'Edit Goal',
-                                          onPressed: () => _showEditGoalDialog(
-                                            goal,
-                                            categories,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.redAccent,
-                                            size: 20,
-                                          ),
-                                          tooltip: 'Delete Goal',
-                                          onPressed: () => _deleteGoal(index),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '₹${goal.target.toStringAsFixed(0)}',
-                                          style: const TextStyle(
-                                            color: Colors.blueAccent,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                if (goal.deadline != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      top: 4,
-                                      bottom: 2,
-                                    ),
-                                    child: Text(
-                                      'Deadline: ${DateFormat('yyyy-MM-dd').format(goal.deadline!)}',
-                                      style: const TextStyle(
-                                        color: Colors.white54,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(height: 10),
-                                LinearProgressIndicator(
-                                  value: progress,
-                                  minHeight: 8,
-                                  backgroundColor: Colors.white12,
-                                  valueColor: const AlwaysStoppedAnimation(
-                                    Colors.greenAccent,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Progress: ${(progress * 100).toStringAsFixed(1)}%  (Spent: ₹${spent.toStringAsFixed(0)})',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _deleteGoal(int index) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Goal'),
-        content: const Text('Are you sure you want to delete this goal?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true) {
-      setState(() {
-        _goals.removeAt(index);
-      });
-    }
-  }
-
-  void _showEditGoalDialog(_Goal goal, List<Category> categories) {
-    final nameController = TextEditingController(text: goal.name);
-    final amountController = TextEditingController(
-      text: goal.target.toStringAsFixed(0),
-    );
-    String? selectedCategoryId = goal.categoryId;
-    DateTime? selectedDeadline = goal.deadline;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Goal'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Goal Name'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: amountController,
-                  decoration: const InputDecoration(labelText: 'Target (₹)'),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: selectedCategoryId,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                  items: categories
-                      .map(
-                        (cat) => DropdownMenuItem(
-                          value: cat.id,
-                          child: Row(
-                            children: [
-                              Icon(
-                                IconData(cat.icon, fontFamily: 'MaterialIcons'),
-                                color: Color(cat.color),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(cat.name),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) => selectedCategoryId = val,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Text('Deadline:', style: TextStyle(fontSize: 14)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDeadline ?? DateTime.now(),
-                            firstDate: DateTime.now().subtract(
-                              const Duration(days: 365),
-                            ),
-                            lastDate: DateTime.now().add(
-                              const Duration(days: 365 * 10),
-                            ),
-                          );
-                          if (picked != null) {
-                            setState(() {
-                              selectedDeadline = picked;
-                            });
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white10,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            selectedDeadline != null
-                                ? DateFormat(
-                                    'yyyy-MM-dd',
-                                  ).format(selectedDeadline!)
-                                : 'No deadline',
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  goal.name = nameController.text.trim();
-                  goal.target =
-                      double.tryParse(amountController.text) ?? goal.target;
-                  goal.categoryId = selectedCategoryId ?? goal.categoryId;
-                  goal.deadline = selectedDeadline;
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
+// Helper function to get IconData from codePoint - uses constant Icons for tree-shaking
+IconData getIconFromCodePoint(int codePoint) {
+  // Map common code points to constant Icons
+  switch (codePoint) {
+    case 0xe57a: // Icons.fastfood
+      return Icons.fastfood;
+    case 0xe53d: // Icons.directions_car
+      return Icons.directions_car;
+    case 0xe59c: // Icons.shopping_cart
+      return Icons.shopping_cart;
+    case 0xe227: // Icons.receipt
+      return Icons.receipt;
+    case 0xe030: // Icons.movie
+      return Icons.movie;
+    case 0xe3b0: // Icons.local_hospital
+      return Icons.local_hospital;
+    case 0xe80c: // Icons.school
+      return Icons.school;
+    case 0xe8cc: // Icons.local_grocery_store
+      return Icons.local_grocery_store;
+    case 0xe1a0: // Icons.lightbulb
+      return Icons.lightbulb;
+    case 0xe88a: // Icons.home
+      return Icons.home;
+    case 0xe263: // Icons.account_balance_wallet
+      return Icons.account_balance_wallet;
+    case 0xe112: // Icons.card_giftcard
+      return Icons.card_giftcard;
+    case 0xe14c: // Icons.category
+      return Icons.category;
+    default:
+      return Icons.category; // fallback
   }
 }
 
@@ -568,7 +84,7 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
   final int _selectedMonth = DateTime.now().month;
 
   final ScrollController _scrollController = ScrollController();
-  final Set<_Goal> _notifiedGoals = {};
+  // final Set<_Goal> _notifiedGoals = {}; // REMOVED: Old goal logic
 
   @override
   void initState() {
@@ -582,7 +98,6 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
         listen: false,
       );
       recProvider.processDueRecurringExpenses(context);
-      scanAndExtractSms(context);
     });
   }
 
@@ -1077,102 +592,173 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
   /// Builds a single list tile for an expense item.
   Widget _buildExpenseListTile(Expense e, Category? cat) {
     final dateLabel = DateFormat('MMM d').format(e.date);
-    return Card(
-      color: Colors.black.withOpacity(0.3),
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          children: [
-            // Icon and category name vertically aligned
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: cat != null
-                      ? Color(cat.color)
-                      : Colors.blueAccent,
-                  child: Icon(
-                    cat != null
-                        ? IconData(cat.icon, fontFamily: 'MaterialIcons')
-                        : Icons.category,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                SizedBox(
-                  width: 48,
-                  child: Text(
-                    cat?.name ?? 'Uncategorized',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+    return Dismissible(
+      key: Key(e.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.redAccent.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(Icons.delete, color: Colors.white, size: 28),
+      ),
+      confirmDismiss: (direction) async {
+        return await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            title: const Text(
+              'Delete Expense?',
+              style: TextStyle(color: Colors.white),
             ),
-            const SizedBox(width: 12),
-            // Name (description)
-            Expanded(
-              flex: 3,
-              child: Text(
-                e.description,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+            content: const Text(
+              'Are you sure you want to delete this expense?',
+              style: TextStyle(color: Colors.white70),
             ),
-            // Date in the middle
-            Expanded(
-              flex: 2,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    dateLabel,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white54),
                 ),
               ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      onDismissed: (direction) {
+        Provider.of<ExpensesProvider>(
+          context,
+          listen: false,
+        ).deleteExpense(e.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Deleted ${e.description}'),
+            backgroundColor: Colors.redAccent,
+            action: SnackBarAction(
+              label: 'Undo',
+              textColor: Colors.white,
+              onPressed: () {
+                // To implement undo, we'd need to re-add the expense.
+                // For now, let's just notify.
+                // A proper undo would require holding the expense object and re-adding it.
+                Provider.of<ExpensesProvider>(
+                  context,
+                  listen: false,
+                ).addExpense(e);
+              },
             ),
-            // Cost (amount)
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerRight,
+          ),
+        );
+      },
+      child: Card(
+        color: Colors.black.withOpacity(0.3),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            children: [
+              // Icon and category name vertically aligned
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: cat != null
+                        ? Color(cat.color)
+                        : Colors.blueAccent,
+                    child: Icon(
+                      cat != null
+                          ? getIconFromCodePoint(cat.icon)
+                          : Icons.category,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: 48,
+                    child: Text(
+                      cat?.name ?? 'Uncategorized',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              // Name (description)
+              Expanded(
+                flex: 3,
                 child: Text(
-                  '₹${e.amount.toStringAsFixed(0)}',
+                  e.description,
                   style: const TextStyle(
-                    color: Colors.blueAccent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Date in the middle
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      dateLabel,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+              // Cost (amount)
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '₹${e.amount.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      color: Colors.blueAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1183,129 +769,159 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
-          decoration: InputDecoration(
-            hintText: 'Search expenses...',
-            hintStyle: const TextStyle(color: Colors.white54),
-            prefixIcon: const Icon(Icons.search, color: Colors.white54),
-            filled: true,
-            fillColor: Colors.white10,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 0,
-              horizontal: 8,
+        // Glassy Search Bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.12)),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search expenses...',
+                  hintStyle: const TextStyle(color: Colors.white38),
+                  prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                  filled: false,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 16,
+                  ),
+                ),
+                style: const TextStyle(color: Colors.white),
+                onChanged: (val) => setState(() => _searchQuery = val),
+              ),
             ),
           ),
-          style: const TextStyle(color: Colors.white),
-          onChanged: (val) => setState(() => _searchQuery = val),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Row(
           children: [
-            // Category Filter Dropdown
+            // Category Filter
             Expanded(
               flex: 3,
-              child: DropdownButtonFormField<String?>(
-                value: _selectedCategoryId,
-                dropdownColor: Colors.black87,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white10,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 0,
-                  ),
-                  isDense: true,
-                ),
-                icon: const Icon(
-                  Icons.filter_list,
-                  color: Colors.white,
-                  size: 18,
-                ),
-                hint: const Text(
-                  'All Categories',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                isExpanded: true,
-                items: [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text(
-                      'All Categories',
-                      style: TextStyle(color: Colors.white, fontSize: 13),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withOpacity(0.12)),
                     ),
-                  ),
-                  ...categoriesProvider.categories.map(
-                    (cat) => DropdownMenuItem(
-                      value: cat.id,
-                      child: Row(
-                        children: [
-                          Icon(
-                            IconData(cat.icon, fontFamily: 'MaterialIcons'),
-                            color: Color(cat.color),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String?>(
+                        value: _selectedCategoryId,
+                        dropdownColor: const Color(0xFF1E1E1E),
+                        icon: const Icon(
+                          Icons.filter_list,
+                          color: Colors.white54,
+                          size: 18,
+                        ),
+                        hint: const Text(
+                          'Cat.',
+                          style: TextStyle(color: Colors.white54, fontSize: 13),
+                        ),
+                        isExpanded: true,
+                        style: const TextStyle(color: Colors.white),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
                             child: Text(
-                              cat.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
+                              'All',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
                               ),
-                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          ...categoriesProvider.categories.map(
+                            (cat) => DropdownMenuItem(
+                              value: cat.id,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    getIconFromCodePoint(cat.icon),
+                                    color: Color(cat.color),
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      cat.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
+                        onChanged: (val) =>
+                            setState(() => _selectedCategoryId = val),
                       ),
                     ),
                   ),
-                ],
-                onChanged: (val) => setState(() => _selectedCategoryId = val),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
-            // Sort By Dropdown
+            const SizedBox(width: 12),
+            // Sort By Filter
             Expanded(
               flex: 2,
-              child: DropdownButtonFormField<SortOption>(
-                value: _sortOption,
-                dropdownColor: Colors.black87,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white10,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withOpacity(0.12)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<SortOption>(
+                        value: _sortOption,
+                        dropdownColor: const Color(0xFF1E1E1E),
+                        icon: const Icon(
+                          Icons.sort,
+                          color: Colors.white54,
+                          size: 18,
+                        ),
+                        isExpanded: true,
+                        style: const TextStyle(color: Colors.white),
+                        items: const [
+                          DropdownMenuItem(
+                            value: SortOption.date,
+                            child: Text('Date', style: TextStyle(fontSize: 14)),
+                          ),
+                          DropdownMenuItem(
+                            value: SortOption.amount,
+                            child: Text('Val.', style: TextStyle(fontSize: 14)),
+                          ),
+                          DropdownMenuItem(
+                            value: SortOption.category,
+                            child: Text('Cat.', style: TextStyle(fontSize: 14)),
+                          ),
+                        ],
+                        onChanged: (val) => setState(() => _sortOption = val!),
+                      ),
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 0,
-                  ),
-                  isDense: true,
                 ),
-                icon: const Icon(Icons.sort, color: Colors.white, size: 18),
-                isExpanded: true,
-                style: const TextStyle(fontSize: 13, color: Colors.white),
-                items: const [
-                  DropdownMenuItem(value: SortOption.date, child: Text('Date')),
-                  DropdownMenuItem(
-                    value: SortOption.amount,
-                    child: Text('Amount'),
-                  ),
-                  DropdownMenuItem(
-                    value: SortOption.category,
-                    child: Text('Category'),
-                  ),
-                ],
-                onChanged: (val) => setState(() => _sortOption = val!),
               ),
             ),
           ],
@@ -1317,53 +933,52 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
   /// Builds the toggle buttons for changing the zoom/grouping level.
   Widget _buildZoomControls() {
     return Center(
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.25),
-                  width: 1.2,
-                ),
-              ),
-              child: ToggleButtons(
-                isSelected: [
-                  _zoomLevel == 'year',
-                  _zoomLevel == 'day',
-                  _zoomLevel == 'month',
-                ],
-                onPressed: (index) {
-                  setState(() {
-                    if (index == 0) _zoomLevel = 'year';
-                    if (index == 1) _zoomLevel = 'day';
-                    if (index == 2) _zoomLevel = 'month';
-                  });
-                },
-                borderRadius: BorderRadius.circular(16),
-                selectedColor: Colors.black,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.secondary.withOpacity(0.85),
-                color: Colors.white,
-                borderColor: Colors.transparent,
-                selectedBorderColor: Colors.transparent,
-                constraints: const BoxConstraints(minHeight: 36, minWidth: 70),
-                children: ['Year', 'Day', 'Month']
-                    .map(
-                      (label) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(label),
-                      ),
-                    )
-                    .toList(),
-              ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildZoomSegment('Year', 'year'),
+                const SizedBox(width: 4),
+                _buildZoomSegment('Month', 'month'),
+                const SizedBox(width: 4),
+                _buildZoomSegment('Day', 'day'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildZoomSegment(String label, String value) {
+    final isSelected = _zoomLevel == value;
+    return GestureDetector(
+      onTap: () => setState(() => _zoomLevel = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Colors.white.withOpacity(0.2)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white54,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 14,
           ),
         ),
       ),

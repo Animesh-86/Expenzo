@@ -106,10 +106,14 @@ class RecurringExpensesProvider extends ChangeNotifier {
         }
         // Update nextDueDate
         DateTime next = rec.nextDueDate;
-        if (rec.recurrence == 'monthly') {
-          next = DateTime(next.year, next.month + 1, next.day);
-        } else if (rec.recurrence == 'weekly') {
+        if (rec.recurrence.toLowerCase() == 'daily') {
+          next = next.add(const Duration(days: 1));
+        } else if (rec.recurrence.toLowerCase() == 'weekly') {
           next = next.add(const Duration(days: 7));
+        } else if (rec.recurrence.toLowerCase() == 'monthly') {
+          next = DateTime(next.year, next.month + 1, next.day);
+        } else if (rec.recurrence.toLowerCase() == 'yearly') {
+          next = DateTime(next.year + 1, next.month, next.day);
         }
         if (rec.endDate == null || next.isBefore(rec.endDate!)) {
           rec.nextDueDate = next;

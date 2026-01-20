@@ -10,6 +10,41 @@ import 'budget_management_screen.dart';
 import 'recurring_expenses_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Helper function to get IconData from codePoint - uses constant Icons for tree-shaking
+IconData getIconFromCodePoint(int codePoint) {
+  // Map common code points to constant Icons
+  switch (codePoint) {
+    case 0xe57a: // Icons.fastfood
+      return Icons.fastfood;
+    case 0xe53d: // Icons.directions_car
+      return Icons.directions_car;
+    case 0xe59c: // Icons.shopping_cart
+      return Icons.shopping_cart;
+    case 0xe227: // Icons.receipt
+      return Icons.receipt;
+    case 0xe030: // Icons.movie
+      return Icons.movie;
+    case 0xe3b0: // Icons.local_hospital
+      return Icons.local_hospital;
+    case 0xe80c: // Icons.school
+      return Icons.school;
+    case 0xe8cc: // Icons.local_grocery_store
+      return Icons.local_grocery_store;
+    case 0xe1a0: // Icons.lightbulb
+      return Icons.lightbulb;
+    case 0xe88a: // Icons.home
+      return Icons.home;
+    case 0xe263: // Icons.account_balance_wallet
+      return Icons.account_balance_wallet;
+    case 0xe112: // Icons.card_giftcard
+      return Icons.card_giftcard;
+    case 0xe14c: // Icons.category
+      return Icons.category;
+    default:
+      return Icons.category; // fallback
+  }
+}
+
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
 
@@ -254,6 +289,10 @@ class _MonthlyAnalyticsTab extends StatelessWidget {
       xLabel: 'Day',
       categories: categories,
       xMax: DateTime(now.year, now.month + 1, 0).day,
+      showPie: showPie,
+      showBar: showBar,
+      showLine: showLine,
+      showInsights: showInsights,
       topWidget: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -334,7 +373,7 @@ class _MonthlyAnalyticsTab extends StatelessWidget {
                       children: [
                         Icon(
                           cat != null
-                              ? IconData(cat.icon, fontFamily: 'MaterialIcons')
+                              ? getIconFromCodePoint(cat.icon)
                               : Icons.category,
                           color: Colors.white70,
                         ),
@@ -466,6 +505,10 @@ class _WeeklyAnalyticsTab extends StatelessWidget {
       xLabel: 'Weekday',
       categories: categories,
       xMax: 7,
+      showPie: showPie,
+      showBar: showBar,
+      showLine: showLine,
+      showInsights: showInsights,
     );
   }
 }
@@ -517,6 +560,10 @@ class _YearlyAnalyticsTab extends StatelessWidget {
       xLabel: 'Month',
       categories: categories,
       xMax: 12,
+      showPie: showPie,
+      showBar: showBar,
+      showLine: showLine,
+      showInsights: showInsights,
     );
   }
 }
@@ -529,6 +576,10 @@ class _AnalyticsTabContent extends StatefulWidget {
   final Map<String, Category> categories;
   final int xMax;
   final Widget? topWidget;
+  final bool showPie;
+  final bool showBar;
+  final bool showLine;
+  final bool showInsights;
 
   const _AnalyticsTabContent({
     required this.total,
@@ -537,6 +588,10 @@ class _AnalyticsTabContent extends StatefulWidget {
     required this.xLabel,
     required this.categories,
     required this.xMax,
+    required this.showPie,
+    required this.showBar,
+    required this.showLine,
+    required this.showInsights,
     this.topWidget,
     super.key,
   });
@@ -630,7 +685,9 @@ class _AnalyticsTabContentState extends State<_AnalyticsTabContent>
               ),
             ),
             const SizedBox(height: 24),
-            if (widget.byCategory.isNotEmpty && !isTrendsTab) ...[
+            if (widget.byCategory.isNotEmpty &&
+                !isTrendsTab &&
+                widget.showPie) ...[
               Text(
                 'Spending by Category',
                 style: TextStyle(
@@ -649,10 +706,7 @@ class _AnalyticsTabContentState extends State<_AnalyticsTabContent>
                           (widget.key?.toString() ?? ''),
                     );
                     print(
-                      'PieChart rebuilt with key: ' +
-                          pieKey.toString() +
-                          ' and data: ' +
-                          widget.byCategory.toString(),
+                      'PieChart rebuilt with key: $pieKey and data: ${widget.byCategory}',
                     );
                     return RotationTransition(
                       turns: _pieRotation,
@@ -735,7 +789,7 @@ class _AnalyticsTabContentState extends State<_AnalyticsTabContent>
               ),
               const SizedBox(height: 24),
             ],
-            if (widget.byX.isNotEmpty) ...[
+            if (widget.byX.isNotEmpty && widget.showBar) ...[
               Text(
                 'Spending by ${widget.xLabel}',
                 style: TextStyle(
@@ -999,47 +1053,16 @@ class _TrendsAnalyticsTab extends StatelessWidget {
 
     // --- AI Insights (heuristics) ---
     final List<String> insights = [];
-    if (monthChange != null && monthChange.abs() > 10) {
+    if (monthChange != null && monthChange.abs() > 0) {
       if (monthChange > 0) {
         insights.add(
-          "You spent  ${monthChange.abs().toStringAsFixed(1)}% more this month than last month.",
+          "You spent ${monthChange.abs().toStringAsFixed(1)}% more this month than last month.",
         );
       } else {
         insights.add(
-          "Great job! You spent  ${monthChange.abs().toStringAsFixed(1)}% less this month than last month.",
+          "Great job! Spending is down ${monthChange.abs().toStringAsFixed(1)}% from last month.",
         );
       }
-    }
-    if (catTrends.isNotEmpty &&
-        catTrends.first.change != null &&
-        catTrends.first.change!.abs() > 20) {
-      final t = catTrends.first;
-      if (t.change! > 0) {
-        insights.add(
-          "Your spending on  ${t.category} increased by  ${t.change!.abs().toStringAsFixed(1)}% this month.",
-        );
-      } else {
-        insights.add(
-          "You reduced your spending on  ${t.category} by  ${t.change!.abs().toStringAsFixed(1)}% this month.",
-        );
-      }
-    }
-    if (thisMonthByCat.isNotEmpty) {
-      final mostFrequent = thisMonthByCat.entries.reduce(
-        (a, b) => a.value > b.value ? a : b,
-      );
-      insights.add(
-        "Most of your spending this month was on  ${categories[mostFrequent.key]?.name ?? 'Unknown'}.",
-      );
-    }
-    if (thisMonthExpenses.isNotEmpty) {
-      final biggest = thisMonthExpenses.reduce(
-        (a, b) => a.amount > b.amount ? a : b,
-      );
-      final catName = categories[biggest.category]?.name ?? 'Unknown';
-      insights.add(
-        "Your largest expense this month was ₹  ${biggest.amount.toStringAsFixed(2)} on $catName ( ${biggest.date.toLocal().toString().split(' ')[0]}).",
-      );
     }
     if (thisMonthExpenses.isNotEmpty) {
       final daysSoFar = now.day;
@@ -1047,28 +1070,6 @@ class _TrendsAnalyticsTab extends StatelessWidget {
       final projected = avgPerDay * DateTime(now.year, now.month + 1, 0).day;
       insights.add(
         "At your current pace, you'll spend about ₹  ${projected.toStringAsFixed(0)} this month.",
-      );
-    }
-    if (thisMonthExpenses.length > 3) {
-      final avg = thisMonthTotal / thisMonthExpenses.length;
-      final unusual = thisMonthExpenses
-          .where((e) => e.amount > 2 * avg)
-          .toList();
-      for (final e in unusual) {
-        final catName = categories[e.category]?.name ?? 'Unknown';
-        insights.add(
-          "Unusually high expense: ₹  ${e.amount.toStringAsFixed(2)} on $catName ( ${e.date.toLocal().toString().split(' ')[0]}).",
-        );
-      }
-    }
-    if (monthChange != null && monthChange > 10) {
-      insights.add(
-        "Tip: Try setting a budget for your top spending categories to save more next month.",
-      );
-    }
-    if (thisMonthByCat.length <= 2 && thisMonthTotal > 0) {
-      insights.add(
-        "Most of your spending is concentrated in just  ${thisMonthByCat.length} categories. Consider diversifying.",
       );
     }
 
@@ -1080,6 +1081,10 @@ class _TrendsAnalyticsTab extends StatelessWidget {
       xLabel: '',
       categories: categories,
       xMax: 1,
+      showPie: showPie,
+      showBar: showBar,
+      showLine: showLine,
+      showInsights: showInsights,
       topWidget: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1265,7 +1270,7 @@ class _TrendsAnalyticsTab extends StatelessWidget {
           ...catTrends.map(
             (trend) => ListTile(
               leading: Icon(
-                IconData(trend.icon, fontFamily: 'MaterialIcons'),
+                getIconFromCodePoint(trend.icon),
                 color: Colors.white70,
               ),
               title: Text(

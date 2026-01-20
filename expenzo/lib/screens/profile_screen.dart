@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:expenzo/providers/categories_provider.dart';
 import 'package:provider/provider.dart';
+import '../providers/expenses_provider.dart';
+import '../services/export_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -281,6 +283,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       const SizedBox(height: 8),
                       const Divider(color: Colors.white24, thickness: 1),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.download),
+                        label: const Text('Export Data to CSV'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          setState(() => _loading = true);
+                          try {
+                            final expenses = Provider.of<ExpensesProvider>(
+                              context,
+                              listen: false,
+                            ).expenses;
+                            final categories = Provider.of<CategoriesProvider>(
+                              context,
+                              listen: false,
+                            ).categories;
+
+                            await ExportService().exportExpensesToCsv(
+                              expenses,
+                              categories,
+                            );
+
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Data exported successfully!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Export failed: $e'),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _loading = false);
+                          }
+                        },
+                      ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.category),

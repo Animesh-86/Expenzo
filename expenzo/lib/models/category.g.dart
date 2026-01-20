@@ -21,7 +21,7 @@ class CategoryAdapter extends TypeAdapter<Category> {
       name: fields[1] as String,
       icon: fields[2] as int,
       isCustom: fields[3] as bool,
-      color: fields[4] as int? ?? 0xFF1976D2,
+      color: fields[4] as int,
     );
   }
 

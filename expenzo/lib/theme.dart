@@ -74,7 +74,7 @@ class GlassmorphicCard extends StatelessWidget {
     required this.child,
     this.borderRadius = 20.0,
     this.blur = 16.0,
-    this.opacity = 0.3,
+    this.opacity = 0.1, // Reduced opacity for sleeker look
     this.padding,
     this.margin,
   });
@@ -83,18 +83,35 @@ class GlassmorphicCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: margin,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
           child: Container(
-            padding: padding ?? EdgeInsets.all(16),
+            padding: padding ?? const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(opacity),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(opacity + 0.05),
+                  Colors.white.withOpacity(opacity),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: Colors.white.withOpacity(0.18),
-                width: 1.2,
+                color: Colors.white.withOpacity(0.12),
+                width: 1.0,
               ),
             ),
             child: child,

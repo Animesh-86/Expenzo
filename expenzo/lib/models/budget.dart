@@ -10,10 +10,20 @@ class Budget extends HiveObject {
   @HiveField(1)
   double amount;
 
-  Budget({this.categoryId, required this.amount});
+  @HiveField(2)
+  String period; // 'Daily', 'Weekly', 'Monthly', 'Yearly' - default 'Monthly'
 
-  Map<String, dynamic> toMap() => {'categoryId': categoryId, 'amount': amount};
+  Budget({this.categoryId, required this.amount, this.period = 'Monthly'});
 
-  factory Budget.fromMap(Map<String, dynamic> map) =>
-      Budget(categoryId: map['categoryId'], amount: map['amount']);
+  Map<String, dynamic> toMap() => {
+    'categoryId': categoryId,
+    'amount': amount,
+    'period': period,
+  };
+
+  factory Budget.fromMap(Map<String, dynamic> map) => Budget(
+    categoryId: map['categoryId'],
+    amount: map['amount'],
+    period: map['period'] ?? 'Monthly',
+  );
 }

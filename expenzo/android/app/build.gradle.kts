@@ -37,6 +37,11 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            
+            // Explicitly disable ProGuard/R8 to avoid dependency conflicts
+            isMinifyEnabled = false
+            isShrinkResources = false
+            // proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }
@@ -59,4 +64,7 @@ dependencies {
   // Add the dependencies for any other desired Firebase products
   // https://firebase.google.com/docs/android/setup#available-libraries
   coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+  
+  // Play Core for dynamic feature delivery
+  // implementation("com.google.android.play:core:1.10.3")
 }

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'login_signup_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,38 +9,10 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   @override
-  void initState() {
-    super.initState();
-    _navigate();
-  }
-
-  /// Navigates to the login screen after a 2-second delay.
-  Future<void> _navigate() async {
-    // Wait for the splash duration.
-    await Future.delayed(const Duration(seconds: 2));
-
-    // Check if the widget is still mounted before navigating.
-    if (!mounted) return;
-
-    // Use addPostFrameCallback to ensure the navigation happens after the build.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginSignUpScreen()),
-      );
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF181C22), Color(0xFF232526)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: const BoxDecoration(color: Color(0xFF232526)),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -60,9 +30,25 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ],
                 ),
-                child: Image.asset(
-                  'assets/images/splash.png',
-                  fit: BoxFit.contain,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(32),
+                  child: Image.asset(
+                    'assets/images/splash.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        child: Icon(
+                          Icons.account_balance_wallet,
+                          size: 60,
+                          color: Colors.blueAccent,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 32),

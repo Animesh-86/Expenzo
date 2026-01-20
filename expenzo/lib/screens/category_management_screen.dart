@@ -5,6 +5,41 @@ import '../providers/categories_provider.dart';
 import '../theme.dart';
 import 'package:uuid/uuid.dart';
 
+// Helper function to get IconData from codePoint - uses constant Icons for tree-shaking
+IconData getIconFromCodePoint(int codePoint) {
+  // Map common code points to constant Icons
+  switch (codePoint) {
+    case 0xe57a: // Icons.fastfood
+      return Icons.fastfood;
+    case 0xe53d: // Icons.directions_car
+      return Icons.directions_car;
+    case 0xe59c: // Icons.shopping_cart
+      return Icons.shopping_cart;
+    case 0xe227: // Icons.receipt
+      return Icons.receipt;
+    case 0xe030: // Icons.movie
+      return Icons.movie;
+    case 0xe3b0: // Icons.local_hospital
+      return Icons.local_hospital;
+    case 0xe80c: // Icons.school
+      return Icons.school;
+    case 0xe8cc: // Icons.local_grocery_store
+      return Icons.local_grocery_store;
+    case 0xe1a0: // Icons.lightbulb
+      return Icons.lightbulb;
+    case 0xe88a: // Icons.home
+      return Icons.home;
+    case 0xe263: // Icons.account_balance_wallet
+      return Icons.account_balance_wallet;
+    case 0xe112: // Icons.card_giftcard
+      return Icons.card_giftcard;
+    case 0xe14c: // Icons.category
+      return Icons.category;
+    default:
+      return Icons.category; // fallback
+  }
+}
+
 class CategoryManagementScreen extends StatelessWidget {
   const CategoryManagementScreen({super.key});
 
@@ -30,7 +65,7 @@ class CategoryManagementScreen extends StatelessWidget {
                   children: [
                     const Text('Icon: '),
                     Icon(
-                      IconData(iconCode, fontFamily: 'MaterialIcons'),
+                      getIconFromCodePoint(iconCode),
                       color: Color(selectedColor),
                     ),
                     IconButton(
@@ -163,7 +198,7 @@ class CategoryManagementScreen extends StatelessWidget {
                 final cat = categories[index];
                 return ListTile(
                   leading: Icon(
-                    IconData(cat.icon, fontFamily: 'MaterialIcons'),
+                    getIconFromCodePoint(cat.icon),
                     color: Colors.white70,
                   ),
                   title: Text(

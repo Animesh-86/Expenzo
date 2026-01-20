@@ -222,18 +222,25 @@ class _LoginSignUpScreenState extends State<LoginSignUpScreen>
                                                   BorderRadius.circular(8),
                                             ),
                                             child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 const Icon(
                                                   Icons.error,
                                                   color: Colors.redAccent,
+                                                  size: 20,
                                                 ),
                                                 const SizedBox(width: 8),
-                                                Expanded(
+                                                Flexible(
                                                   child: Text(
                                                     _error!,
                                                     style: const TextStyle(
                                                       color: Colors.redAccent,
+                                                      fontSize: 14,
                                                     ),
+                                                    textAlign: TextAlign.left,
+                                                    overflow:
+                                                        TextOverflow.visible,
                                                   ),
                                                 ),
                                               ],
@@ -400,18 +407,25 @@ class _LoginSignUpScreenState extends State<LoginSignUpScreen>
                                                   BorderRadius.circular(8),
                                             ),
                                             child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 const Icon(
                                                   Icons.error,
                                                   color: Colors.redAccent,
+                                                  size: 20,
                                                 ),
                                                 const SizedBox(width: 8),
-                                                Expanded(
+                                                Flexible(
                                                   child: Text(
                                                     _error!,
                                                     style: const TextStyle(
                                                       color: Colors.redAccent,
+                                                      fontSize: 14,
                                                     ),
+                                                    textAlign: TextAlign.left,
+                                                    overflow:
+                                                        TextOverflow.visible,
                                                   ),
                                                 ),
                                               ],

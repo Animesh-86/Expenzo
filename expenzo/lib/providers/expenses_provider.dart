@@ -49,46 +49,78 @@ class ExpensesProvider extends ChangeNotifier {
     if (budgetsProvider == null) return;
     final allExpenses = expenses;
     final now = DateTime.now();
+
+    // 1. Check Total Budget (Defaulting to Monthly for now as per legacy, but could be daily)
+    // We'll assume total budget is Monthly for simplicity unless we change that UI too.
     final monthExpenses = allExpenses
         .where((e) => e.date.year == now.year && e.date.month == now.month)
         .toList();
-    final total = monthExpenses.fold<double>(0, (sum, e) => sum + e.amount);
+    final totalSpentMonth = monthExpenses.fold<double>(
+      0,
+      (sum, e) => sum + e.amount,
+    );
     final totalBudget = budgetsProvider.totalBudget ?? 0;
+
     if (totalBudget > 0) {
-      final progress = total / totalBudget;
+      final progress = totalSpentMonth / totalBudget;
       if (progress >= 1.0) {
         showBudgetNotification(
-          'Budget Exceeded',
+          'Total Budget Exceeded',
           'You have exceeded your total monthly budget!',
         );
       } else if (progress >= 0.8) {
         showBudgetNotification(
-          'Budget Warning',
+          'Total Budget Warning',
           'You have spent 80% of your total monthly budget.',
         );
       }
     }
-    // Per-category
-    final Map<String, double> byCategory = {};
-    for (final e in monthExpenses) {
-      byCategory[e.category] = (byCategory[e.category] ?? 0) + e.amount;
-    }
-    byCategory.forEach((catId, spent) {
-      final budget = budgetsProvider.getBudgetForCategory(catId) ?? 0;
-      if (budget > 0) {
-        final progress = spent / budget;
-        if (progress >= 1.0) {
-          showBudgetNotification(
-            'Budget Exceeded',
-            'You have exceeded your budget for category: $catId',
-          );
-        } else if (progress >= 0.8) {
-          showBudgetNotification(
-            'Budget Warning',
-            'You have spent 80% of your budget for category: $catId',
-          );
-        }
+
+    // 2. Check Category Budgets
+    // We need to group expenses by category AND check against that category's specific period
+    final categories = allExpenses
+        .map((e) => e.category)
+        .toSet(); // get all active categories
+
+    for (final catId in categories) {
+      final budgetObj = budgetsProvider.getBudgetObject(catId);
+      if (budgetObj == null || budgetObj.amount <= 0) continue;
+
+      double spent = 0;
+      if (budgetObj.period == 'Daily') {
+        spent = allExpenses
+            .where(
+              (e) =>
+                  e.category == catId &&
+                  e.date.year == now.year &&
+                  e.date.month == now.month &&
+                  e.date.day == now.day,
+            )
+            .fold(0, (sum, e) => sum + e.amount);
+      } else {
+        // Monthly or others, treat as Monthly default
+        spent = allExpenses
+            .where(
+              (e) =>
+                  e.category == catId &&
+                  e.date.year == now.year &&
+                  e.date.month == now.month,
+            )
+            .fold(0, (sum, e) => sum + e.amount);
       }
-    });
+
+      final progress = spent / budgetObj.amount;
+      if (progress >= 1.0) {
+        showBudgetNotification(
+          'Budget Exceeded',
+          'Exceeded ${budgetObj.period} budget for category: $catId',
+        );
+      } else if (progress >= 0.8) {
+        showBudgetNotification(
+          'Budget Warning',
+          '80% of ${budgetObj.period} budget spent for category: $catId',
+        );
+      }
+    }
   }
 }
