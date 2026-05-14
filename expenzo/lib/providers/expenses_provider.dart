@@ -5,10 +5,16 @@ import '../providers/budgets_provider.dart';
 import '../main.dart';
 
 class ExpensesProvider extends ChangeNotifier {
-  final Box<Expense> _expenseBox = Hive.box<Expense>('expenses');
+  Box<Expense> get _expenseBox {
+    if (!Hive.isBoxOpen('expenses')) {
+      print('Warning: expenses box not found.');
+    }
+    return Hive.box<Expense>('expenses');
+  }
 
   List<Expense> get expenses {
     try {
+      if (!Hive.isBoxOpen('expenses')) return [];
       return _expenseBox.values.toList();
     } catch (e) {
       print('Error reading expenses from Hive: $e');
@@ -17,6 +23,7 @@ class ExpensesProvider extends ChangeNotifier {
   }
 
   void addExpense(Expense expense, {BudgetsProvider? budgetsProvider}) async {
+    if (!Hive.isBoxOpen('expenses')) return;
     await _expenseBox.put(expense.id, expense);
     notifyListeners();
     _checkBudgets(budgetsProvider);
@@ -38,6 +45,7 @@ class ExpensesProvider extends ChangeNotifier {
 
   Expense? getExpense(String id) {
     try {
+      if (!Hive.isBoxOpen('expenses')) return null;
       return _expenseBox.get(id);
     } catch (e) {
       print('Error reading expense $id from Hive: $e');

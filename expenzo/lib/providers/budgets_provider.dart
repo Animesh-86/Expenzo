@@ -3,10 +3,18 @@ import 'package:hive/hive.dart';
 import '../models/budget.dart';
 
 class BudgetsProvider extends ChangeNotifier {
-  final Box<Budget> _budgetBox = Hive.box<Budget>('budgets');
+  Box<Budget> get _budgetBox {
+    if (!Hive.isBoxOpen('budgets')) {
+      print('Warning: budgets box not found. Attempting to open...');
+      // Note: This is synchronous-ish but Hive.box will still throw if not open.
+      // The recovery in main.dart should prevent this, but we handle it here just in case.
+    }
+    return Hive.box<Budget>('budgets');
+  }
 
   List<Budget> get budgets {
     try {
+      if (!Hive.isBoxOpen('budgets')) return [];
       return _budgetBox.values.toList();
     } catch (e) {
       print('Error reading budgets from Hive: $e');
@@ -16,6 +24,7 @@ class BudgetsProvider extends ChangeNotifier {
 
   Budget? getBudgetObject(String categoryId) {
     try {
+      if (!Hive.isBoxOpen('budgets')) return null;
       return _budgetBox.values.firstWhere(
         (b) => b.categoryId == categoryId,
         orElse: () =>
@@ -34,6 +43,7 @@ class BudgetsProvider extends ChangeNotifier {
 
   double? get totalBudget {
     try {
+      if (!Hive.isBoxOpen('budgets')) return 0;
       final b = _budgetBox.values.firstWhere(
         (b) => b.categoryId == null,
         orElse: () => Budget(categoryId: null, amount: 0, period: 'Monthly'),
@@ -53,6 +63,7 @@ class BudgetsProvider extends ChangeNotifier {
     // simple check: if existing budget, update it
     Budget? existing;
     try {
+      if (!Hive.isBoxOpen('budgets')) return;
       existing = _budgetBox.values.firstWhere(
         (b) => b.categoryId == categoryId,
       );

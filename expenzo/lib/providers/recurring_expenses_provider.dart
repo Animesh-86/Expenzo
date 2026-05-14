@@ -9,12 +9,16 @@ import '../main.dart';
 import '../providers/budgets_provider.dart';
 
 class RecurringExpensesProvider extends ChangeNotifier {
-  final Box<RecurringExpense> _recurringBox = Hive.box<RecurringExpense>(
-    'recurring_expenses',
-  );
+  Box<RecurringExpense> get _recurringBox {
+    if (!Hive.isBoxOpen('recurring_expenses')) {
+      print('Warning: recurring_expenses box not found.');
+    }
+    return Hive.box<RecurringExpense>('recurring_expenses');
+  }
 
   List<RecurringExpense> get recurringExpenses {
     try {
+      if (!Hive.isBoxOpen('recurring_expenses')) return [];
       return _recurringBox.values.toList();
     } catch (e) {
       print('Error reading recurring expenses from Hive: $e');
@@ -23,6 +27,7 @@ class RecurringExpensesProvider extends ChangeNotifier {
   }
 
   void addRecurring(RecurringExpense exp) async {
+    if (!Hive.isBoxOpen('recurring_expenses')) return;
     await _recurringBox.put(exp.id, exp);
     notifyListeners();
   }
@@ -39,6 +44,7 @@ class RecurringExpensesProvider extends ChangeNotifier {
 
   RecurringExpense? getRecurring(String id) {
     try {
+      if (!Hive.isBoxOpen('recurring_expenses')) return null;
       return _recurringBox.get(id);
     } catch (e) {
       print('Error reading recurring expense $id from Hive: $e');

@@ -17,12 +17,14 @@ import 'models/expense.dart';
 import 'models/category.dart';
 import 'models/budget.dart';
 import 'models/recurring_expense.dart';
+import 'models/saving_goal.dart';
 
 // Providers
 import 'providers/expenses_provider.dart';
 import 'providers/categories_provider.dart';
 import 'providers/budgets_provider.dart';
 import 'providers/recurring_expenses_provider.dart';
+import 'providers/saving_goals_provider.dart';
 
 // Screens
 import 'screens/splash_screen.dart';
@@ -69,15 +71,32 @@ void main() async {
   Hive.registerAdapter(CategoryAdapter());
   Hive.registerAdapter(BudgetAdapter());
   Hive.registerAdapter(RecurringExpenseAdapter());
+  Hive.registerAdapter(SavingGoalAdapter());
+  // Helper to open boxes with recovery
+  Future<void> openBoxWithRecovery<T>(String name) async {
+    try {
+      await Hive.openBox<T>(name);
+    } catch (e) {
+      debugPrint('Failed to open box $name: $e. Attempting recovery...');
+      try {
+        // If opening fails (corruption), delete and try again
+        await Hive.deleteBoxFromDisk(name);
+        await Hive.openBox<T>(name);
+        debugPrint('Box $name recovered (data cleared).');
+      } catch (e2) {
+        debugPrint('Critical: Could not recover box $name: $e2');
+      }
+    }
+  }
+
   try {
-    await Future.wait([
-      Hive.openBox<Expense>('expenses'),
-      Hive.openBox<Category>('categories'),
-      Hive.openBox<Budget>('budgets'),
-      Hive.openBox<RecurringExpense>('recurring_expenses'),
-    ]);
+    await openBoxWithRecovery<Expense>('expenses');
+    await openBoxWithRecovery<Category>('categories');
+    await openBoxWithRecovery<Budget>('budgets');
+    await openBoxWithRecovery<RecurringExpense>('recurring_expenses');
+    await openBoxWithRecovery<SavingGoal>('saving_goals');
   } catch (e, st) {
-    debugPrint('Failed to open Hive boxes: $e\n$st');
+    debugPrint('General error during Hive box opening: $e\n$st');
   }
 
   // Initialize notifications
@@ -109,6 +128,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => categoriesProvider),
         ChangeNotifierProvider(create: (_) => BudgetsProvider()),
         ChangeNotifierProvider(create: (_) => RecurringExpensesProvider()),
+        ChangeNotifierProvider(create: (_) => SavingGoalsProvider()),
       ],
       child: const ExpenzoApp(),
     ),

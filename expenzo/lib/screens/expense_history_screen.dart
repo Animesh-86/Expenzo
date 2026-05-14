@@ -662,102 +662,114 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
           ),
         );
       },
-      child: Card(
-        color: Colors.black.withOpacity(0.3),
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            children: [
-              // Icon and category name vertically aligned
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: cat != null
-                        ? Color(cat.color)
-                        : Colors.blueAccent,
-                    child: Icon(
-                      cat != null
-                          ? getIconFromCodePoint(cat.icon)
-                          : Icons.category,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 48,
-                    child: Text(
-                      cat?.name ?? 'Uncategorized',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              // Name (description)
-              Expanded(
-                flex: 3,
-                child: Text(
-                  e.description,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              // Date in the middle
-              Expanded(
-                flex: 2,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.10),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      dateLabel,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ExpenseEntryScreen(initialExpense: e),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: Card(
+          color: Colors.black.withOpacity(0.3),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              children: [
+                // Icon and category name vertically aligned
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: cat != null
+                          ? Color(cat.color)
+                          : Colors.blueAccent,
+                      child: Icon(
+                        cat != null
+                            ? getIconFromCodePoint(cat.icon)
+                            : Icons.category,
+                        color: Colors.white,
+                        size: 18,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: 48,
+                      child: Text(
+                        cat?.name ?? 'Uncategorized',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              // Cost (amount)
-              Expanded(
-                flex: 2,
-                child: Align(
-                  alignment: Alignment.centerRight,
+                const SizedBox(width: 12),
+                // Name (description)
+                Expanded(
+                  flex: 3,
                   child: Text(
-                    '₹${e.amount.toStringAsFixed(0)}',
+                    e.description,
                     style: const TextStyle(
-                      color: Colors.blueAccent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // Date in the middle
+                Expanded(
+                  flex: 2,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        dateLabel,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+                // Cost (amount)
+                Expanded(
+                  flex: 2,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '₹${e.amount.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        color: Colors.blueAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

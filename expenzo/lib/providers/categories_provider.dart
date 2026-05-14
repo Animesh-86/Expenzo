@@ -3,10 +3,16 @@ import 'package:hive/hive.dart';
 import '../models/category.dart';
 
 class CategoriesProvider extends ChangeNotifier {
-  final Box<Category> _categoryBox = Hive.box<Category>('categories');
+  Box<Category> get _categoryBox {
+    if (!Hive.isBoxOpen('categories')) {
+      print('Warning: categories box not found.');
+    }
+    return Hive.box<Category>('categories');
+  }
 
   List<Category> get categories {
     try {
+      if (!Hive.isBoxOpen('categories')) return [];
       return _categoryBox.values.toList();
     } catch (e) {
       print('Error reading categories from Hive: $e');
@@ -31,6 +37,7 @@ class CategoriesProvider extends ChangeNotifier {
 
   Category? getCategory(String id) {
     try {
+      if (!Hive.isBoxOpen('categories')) return null;
       return _categoryBox.get(id);
     } catch (e) {
       print('Error reading category $id from Hive: $e');
@@ -148,6 +155,7 @@ class CategoriesProvider extends ChangeNotifier {
       ),
     ];
     bool added = false;
+    if (!Hive.isBoxOpen('categories')) return;
     for (final cat in defaults) {
       if (_categoryBox.get(cat.id) == null) {
         await _categoryBox.put(cat.id, cat);

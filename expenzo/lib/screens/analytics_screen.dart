@@ -88,61 +88,75 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   void _showCustomizeDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.black87,
-        title: const Text(
-          'Customize Dashboard',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              value: showPie,
-              onChanged: (val) => setState(() => showPie = val),
-              title: const Text(
-                'Show Category Pie Chart',
-                style: TextStyle(color: Colors.white),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: Colors.black87,
+          title: const Text(
+            'Customize Dashboard',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SwitchListTile(
+                value: showPie,
+                onChanged: (val) {
+                  setDialogState(() => showPie = val);
+                  setState(() {}); // Update the main screen as well
+                },
+                title: const Text(
+                  'Show Category Pie Chart',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
-            ),
-            SwitchListTile(
-              value: showLine,
-              onChanged: (val) => setState(() => showLine = val),
-              title: const Text(
-                'Show Expense Trend (Line Chart)',
-                style: TextStyle(color: Colors.white),
+              SwitchListTile(
+                value: showLine,
+                onChanged: (val) {
+                  setDialogState(() => showLine = val);
+                  setState(() {});
+                },
+                title: const Text(
+                  'Show Expense Trend (Line Chart)',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
-            ),
-            SwitchListTile(
-              value: showBar,
-              onChanged: (val) => setState(() => showBar = val),
-              title: const Text(
-                'Show Bar Chart',
-                style: TextStyle(color: Colors.white),
+              SwitchListTile(
+                value: showBar,
+                onChanged: (val) {
+                  setDialogState(() => showBar = val);
+                  setState(() {});
+                },
+                title: const Text(
+                  'Show Bar Chart',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
-            ),
-            SwitchListTile(
-              value: showInsights,
-              onChanged: (val) => setState(() => showInsights = val),
-              title: const Text(
-                'Show AI Insights',
-                style: TextStyle(color: Colors.white),
+              SwitchListTile(
+                value: showInsights,
+                onChanged: (val) {
+                  setDialogState(() => showInsights = val);
+                  setState(() {});
+                },
+                title: const Text(
+                  'Show AI Insights',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _savePrefs();
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Save',
+                style: TextStyle(color: Colors.blueAccent),
               ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              _savePrefs();
-              Navigator.of(context).pop();
-            },
-            child: const Text(
-              'Save',
-              style: TextStyle(color: Colors.blueAccent),
-            ),
-          ),
-        ],
       ),
     );
   }
