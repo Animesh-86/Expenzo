@@ -33,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(32),
                   child: Image.asset(
-                    'assets/images/splash.png',
+                    'assets/images/app_icon.png',
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           color: Colors.blueAccent.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(32),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.account_balance_wallet,
                           size: 60,
                           color: Colors.blueAccent,

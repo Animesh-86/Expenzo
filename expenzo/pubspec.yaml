@@ -117,7 +117,7 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 flutter_native_splash:
   color: "#232526"
-  image: assets/images/splash.png
+  image: assets/images/app_icon.png
   android: true
   ios: true
   web: false
